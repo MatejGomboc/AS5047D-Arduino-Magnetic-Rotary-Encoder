@@ -65,60 +65,93 @@ void DumpRegisterValues()
 }
 
 // ************************Write to AS5047D **************************
-void AS5047D_Write( int SSPin, int address, int value) {
+void AS5047D_Write( int SSPin, int address, int value)
+{
   // take the SS pin low to select the chip:
   digitalWrite(SSPin, LOW);
+  
   Serial.println(value, HEX);
-  //  send in the address and value via SPI:
+  
+  //  send in the address via SPI:
+  
   byte v_l = address & 0x00FF;
   byte v_h = (unsigned int)(address & 0x3F00) >> 8;
+  
   if (parity(address & 0x3F) == 1) v_h = v_h | 0x80; // set parity bit
-  //v_h =v_h & (WR | 0x80);  // its  a write command and don't change the parity bit (0x80)
+  //v_h = v_h & (WR | 0x80);  // its  a write command and don't change the parity bit (0x80)
+  
   Serial.print( " parity:  "); Serial.println(parity(address & 0x3F));
   Serial.print(v_h, HEX); Serial.print(" A ");  Serial.println(v_l, HEX);
+  
   SPI.transfer(v_h);
   SPI.transfer(v_l);
+  
   digitalWrite(SSPin, HIGH);
+  
   delay(2);
+  
   digitalWrite(SSPin, LOW);
-  //  send value
+  
+  //  send value via SPI:
+  
   v_l = value & 0x00FF;
   v_h = (unsigned int)(value & 0x3F00) >> 8;
+  
   if (parity(value & 0x3F) == 1) v_h = v_h | 0x80; // set parity bit
-  //v_h =v_h & (WR | 0x80); // its a write command and don't change the parity bit (0x80)
+  //v_h = v_h & (WR | 0x80); // its a write command and don't change the parity bit (0x80)
+  
   Serial.print(v_h, HEX); Serial.print(" D ");  Serial.println(v_l, HEX);
+  
   SPI.transfer(v_h);
   SPI.transfer(v_l);
+  
   // take the SS pin high to de-select the chip:
   digitalWrite(SSPin, HIGH);
 }
 
 //*******************Read from AS5047D ********************************
-unsigned int AS5047D_Read( int SSPin, unsigned int address) {
+unsigned int AS5047D_Read( int SSPin, unsigned int address)
+{
   unsigned int result = 0;   // result to return
+  
   byte res_h = 0;
   byte res_l = 0;
+  
   // take the SS pin low to select the chip:
   digitalWrite(SSPin, LOW);
+  
   //  send in the address and value via SPI:
   byte v_l = address & 0x00FF;
   byte v_h = (unsigned int)(address & 0x3F00) >> 8;
+  
   if (parity(address | (RD << 8)) == 1) v_h = v_h | 0x80; // set parity bit
+  
   v_h = v_h | RD; // its  a read command
+  
   // Serial.print( " parity:  ");Serial.println(parity(address | (RD <<8)));
   // Serial.print(v_h, HEX); Serial.print(" A ");  Serial.print(v_l, HEX);  Serial.print(" >> ");
+  
   res_h = SPI.transfer(v_h);
   res_l = SPI.transfer(v_l);
+  
   digitalWrite(SSPin, HIGH);
+  
   delay(2);
+  
   digitalWrite(SSPin, LOW);
+  
   //if (parity(0x00 | (RD <<8))==1) res_h = res_h | 0x80;  // set parity bit
-  //res_h =res_h | RD;
+  //res_h = res_h | RD;
+  
   res_h = (SPI.transfer(0x00));
   res_l = SPI.transfer(0x00);
+  
   res_h = res_h & 0x3F;  // filter bits outside data
+  
   //Serial.print(res_h, HEX);   Serial.print(" R  ");  Serial.print(res_l, HEX);   Serial.print("  ");
+  
   digitalWrite(SSPin, HIGH);
+  
   return (result = (res_h << 8) | res_l);
 }
 
